@@ -165,7 +165,7 @@ fn main() {
 
     if let Some(windows) = get_windows(space) {
         for window in windows {
-            println!("{} {} {:5} \"{}\" \"{}\"", window.id, window.space, window.has_focus, window.app, window.title);
+            println!("{} {} {:5} \"{}\"", window.id, window.space, window.has_focus, window.app);
         }
     }
 }
