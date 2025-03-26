@@ -112,7 +112,7 @@ fn get_space_info() -> (i32, i32) {
     (0, 0)
 }
 
-fn get_windows(space: i32) -> Option<Vec<Window>> {
+fn get_windows(space: i32, sort_vector: bool) -> Option<Vec<Window>> {
     let windows_output;
     if space == -1 {
         windows_output = Command::new("yabai")
@@ -138,7 +138,10 @@ fn get_windows(space: i32) -> Option<Vec<Window>> {
 
     let json_data = String::from_utf8_lossy(&windows_output.stdout);
     match serde_json::from_str::<Vec<Window>>(&json_data) {
-        Ok(windows) => {
+        Ok(mut windows) => {
+            if sort_vector {
+                windows.sort_by_key(|window| window.id);
+            }
             return Some(windows)
         },
         Err(_) => {
@@ -150,22 +153,37 @@ fn get_windows(space: i32) -> Option<Vec<Window>> {
 fn main() {
     let (max_space, _focused_space) = get_space_info();
 
+    let mut sort_vector = false;
     let mut space = -1;
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
-        match args[1].parse::<i32>() {
-            Ok(n) => {
-                if 1 <= n && n <= max_space {
-                    space = n;
+        if args[1] == "-s" {
+            sort_vector = true;
+            if args.len() > 2 {
+                match args[2].parse::<i32>() {
+                    Ok(n) => {
+                        if 1 <= n && n <= max_space {
+                            space = n;
+                        }
+                    },
+                    Err(_) => (),
                 }
-            },
-            Err(_) => (),
+            }
+        } else {
+            match args[1].parse::<i32>() {
+                Ok(n) => {
+                    if 1 <= n && n <= max_space {
+                        space = n;
+                    }
+                },
+                Err(_) => (),
+            }
         }
     }
 
-    if let Some(windows) = get_windows(space) {
+    if let Some(windows) = get_windows(space, sort_vector) {
         for window in windows {
-            println!("{} {} {:5} \"{}\"", window.id, window.space, window.has_focus, window.app);
+            println!("{} {} {} \"{}\"", window.space, window.has_focus, window.id, window.app);
         }
     }
 }
